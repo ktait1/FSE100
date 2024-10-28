@@ -1,5 +1,11 @@
+
+% after bluetooth connected,
+% below command will say connecting... 
+% might then say disconnected or something, but then comment out line with %
+% and see if beep works, if so it is connected
 brick = ConnectBrick('EV31');
 brick.beep();
+% motors/sensors must be connected to the correct ports, referenced in code
 
 
 %brick.StopAllMotors('Brake');
