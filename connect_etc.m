@@ -18,16 +18,19 @@ brick.beep();
 %brick.MoveMotor('A', 50); 
 %brick.MoveMotor('B', -50);
 %pause(6); % Let the motors turn for 1 second.
+
 brick.StopAllMotors('Brake'); % Hard Stop, all motors.
-i = 1
-while i == 1
-    left = brick.TouchPressed(3);
-    right = brick.TouchPressed(4);
-    display("left: ");
-    disp(left);
-    display("right: ");
-    disp(right);
-end
+
+% loop to test touch buttons
+%i = 1
+%while i == 1
+%    left = brick.TouchPressed(3);
+%    right = brick.TouchPressed(4);
+%    display("left: ");
+%    disp(left);
+%    display("right: ");
+%    disp(right);
+%end
 
 %distance = 0;
 %distance = brick.UltrasonicDist(1);
