@@ -94,7 +94,7 @@ while i == 1
     rightDistance = brick.UltrasonicDist(ultrasonicSensorPort);
 	disp(color);
 
-	brick.MoveMotor('AB', 25);
+	brick.MoveMotor('AB', 15);
 	if (color == colorRed) && (redReached == 0)
 		% Your robot stops for one second when it sees red:
 		brick.StopAllMotors('Brake'); 	% Stops
@@ -139,5 +139,5 @@ while i == 1
 		
     end
 	% Continue Looping
-    pause(pollingRate);
+    pause(0.1);
 end
