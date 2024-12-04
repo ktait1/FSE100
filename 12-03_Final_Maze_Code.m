@@ -184,7 +184,7 @@ while i == 1
 		% At Red: Stop, Flag
 		brick.StopAllMotors('Brake');
 		pause(2);
-		% Set RecentRed To True, Stop Completed, Continue Maze Logic
+		% Set RecentRed To True: Stop Completed, Continue Maze Logic
 		recentRed = 1;
 		
 		
