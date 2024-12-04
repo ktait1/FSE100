@@ -14,6 +14,7 @@ colorSensorPort = 1;
 colorSensorMode = 2; % Mode (2) is ColorCode Mode.
 brick.SetColorMode(colorSensorPort, colorSensorMode); % Set Color Sensor In Port 2 To ColorMode.
 % Variables To Use ColorCode w/ Color Names
+colorBlue = 2;
 colorGreen = 3;
 colorYellow = 4;
 colorRed = 5;
@@ -46,6 +47,8 @@ ultrasonicSensorPort = 4;
 
 % Variables To Save If Color Occurred (Set To 1)
 greenReached = 0;
+blueReached = 0;
+yellowReached = 0;
 % Variable To Account For Red Zone (Stop Sign) : Set To 1 After Red Zone, Reset By Next Maze Logic
 recentRed = 0;
 
@@ -67,7 +70,7 @@ brick.StopAllMotors('Brake');
 %                 [b] Right Wall And Front Clear: Move Forward
 %                 [c] Right Wall And Front Wall: Turn Left
 
-i = 0;
+i = 1;
 while i == 1
     % [0] Refresh Sensors
     color = brick.ColorCode(colorSensorPort);
@@ -76,8 +79,9 @@ while i == 1
 	% [0] Check For Manual Control (Space Key Held)
     if key == 'space'
 		fprintf("Space, waiting for input.\n");
+        brick.StopAllMotors('Brake');
 		pause(1);
-		getInput = 1;
+	  	getInput = 1;
 		while getInput == 1
 			switch key
 			   case 'uparrow'
@@ -89,11 +93,13 @@ while i == 1
   			   case 'k'
 					brick.MoveMotor('A', -50);
 					brick.MoveMotor('B', 50);
-					pause(3.5);   
+					pause(4);
+                    brick.StopAllMotors('Brake');
  			   case 'l'
 					brick.MoveMotor('A', 50);
 					brick.MoveMotor('B', -50); 
-					pause(3.5);					
+					pause(4);
+            		brick.StopAllMotors('Brake');
 			   case 'a'
 					brick.MoveMotorAngleRel('C', 20, 30);
 					brick.WaitForMotor('C');				   
@@ -123,8 +129,8 @@ while i == 1
     end % End Manual Control
 	
 	
-    % [1] Check For Yellow Zone [Drop Off]  / Only After Green Zone [Pick Up] Completed.
-    if (color == colorYellow) && (greenReached == 1)
+    % [1] Check For Yellow Zone [Drop Off]
+    if (color == colorYellow) && (yellowReached == 0) && (blueReached == 1)
 		% Move Car Into Zone (Sensor Is At Front)
 		brick.MoveMotor('AB', 25);
 		pause(2);	
@@ -173,29 +179,29 @@ while i == 1
 			pause(1); % Polling Rate
 		brick.StopAllMotors('Brake');    
 		end % While Loop Switch
-		fprintf("Exit manual control.\n");
-			
-		% After Yellow Zone (Drop Off), Maze Is Complete.
-		i = 0;
-	
+		fprintf("Exit manual control.\n");		
+		yellowReached = 1;
+		recentRed = 0;
 
-	% [2] Check For Red Zone [Stop Sign]
-	elseif (color == colorRed) && (recentRed == 0)
-		% At Red: Stop, Flag
+		% Move Straight Until Next Wall
+		brick.MoveMotor('AB', 25);
+		rightDistance = brick.UltrasonicDist(ultrasonicSensorPort);
+		while rightDistance > 65
+			rightDistance = brick.UltrasonicDist(ultrasonicSensorPort);
+		end
+		% Turn Completed: Ready For Next Maze Logic
 		brick.StopAllMotors('Brake');
-		pause(2);
-		% Set RecentRed To True: Stop Completed, Continue Maze Logic
-		recentRed = 1;
 		
 		
-	% [3] Check For Green Zone [Pick Up]
-	elseif (color == colorGreen) && (greenReached == 0)
+	
+	
+	% Blue Zone [PICK UP]
+	elseif (color == colorBlue) && (blueReached == 0)
 		% Center Within Zone
 		brick.MoveMotor('AB', 25);
 		pause(2);
 		brick.StopAllMotors('Brake');
-		
-		% Green Zone [Pick Up]: Pass To Manual Control
+
 		getInput = 1;
 		while getInput == 1
 			switch key
@@ -208,11 +214,11 @@ while i == 1
   			   case 'k'
 					brick.MoveMotor('A', -50);
 					brick.MoveMotor('B', 50);
-					pause(3.5);   
+					pause(4);   
  			   case 'l'
 					brick.MoveMotor('A', 50);
 					brick.MoveMotor('B', -50); 
-					pause(3.5);					
+					pause(4);					
 			   case 'a'
 					brick.MoveMotorAngleRel('C', 20, 30);
 					brick.WaitForMotor('C');				   
@@ -240,9 +246,74 @@ while i == 1
 		end % While Loop Switch
 		fprintf("Exit manual control.\n");
 
-		% Green Zone [Pick Up] Completed
+		% BLUE ZONE PICK UP COMPLETED
+		blueReached = 1;
+		recentRed = 0;
+
+	% [2] Check For Red Zone [Stop Sign]
+	elseif (color == colorRed) && (recentRed == 0)
+		% At Red: Stop, Flag
+		brick.StopAllMotors('Brake');
+		pause(2);
+		% Set RecentRed To True: Stop Completed, Continue Maze Logic
+		recentRed = 1;
+		
+		
+	% [3] Check For Green Zone [END ZONE]
+	elseif (color == colorGreen) && (yellowReached == 1)
+		% Center Within Zone
+		brick.MoveMotor('AB', 25);
+		pause(2);
+		brick.StopAllMotors('Brake');
+
+		getInput = 1;
+		while getInput == 1
+			switch key
+			   case 'uparrow'
+					brick.MoveMotor('AB', 50);
+					pause(.5);
+			   case 'downarrow'
+					brick.MoveMotor('AB', -50);
+					pause(.5);			   		   
+  			   case 'k'
+					brick.MoveMotor('A', -50);
+					brick.MoveMotor('B', 50);
+					pause(4);   
+ 			   case 'l'
+					brick.MoveMotor('A', 50);
+					brick.MoveMotor('B', -50); 
+					pause(4);					
+			   case 'a'
+					brick.MoveMotorAngleRel('C', 20, 30);
+					brick.WaitForMotor('C');				   
+			   case 'b'
+					brick.MoveMotorAngleRel('C', 20, -30);
+					brick.WaitForMotor('C');			   
+			   case 'e'
+					brick.MoveMotor('A', -20);
+					brick.MoveMotor('B', 20);
+					pause(1);			   
+			   case 'r'
+					brick.MoveMotor('A', 20);
+					brick.MoveMotor('B', -20);
+					pause(1);			   
+			   case 0
+				   disp('No Key Pressed!');
+			   case 'q' % 'q' Is Exit Manual Control
+				   getInput = 0;
+			end % End Switch
+			if key ~= 0
+				fprintf("Key: %s.\n", key);
+			end
+			pause(1); % Polling Rate
+		brick.StopAllMotors('Brake');    
+		end % While Loop Switch
+		fprintf("Exit manual control.\n");
+
+		% Green Zone [END ZONE]
 		greenReached = 1;
 		recentRed = 0;
+		i = 0;
 
 
 	% [4] General Maze Logic
@@ -259,22 +330,20 @@ while i == 1
 			% Get Current Color, Only Turn If Car Is Not Over Yellow Or Green
 			color = brick.ColorCode(colorSensorPort);
 			if color ~= colorYellow
-				if (color ~= colorGreen) || (greenReached == 1)
-					% Now Past Wall, Turn Right
-					brick.MoveMotor('A', 50);
-					brick.MoveMotor('B', -50); 
-					pause(3.5);
-					brick.StopAllMotors('Brake');				
-					% Move Forward (Until New Wall Found) To Complete Turn
-					brick.MoveMotor('AB', 25);
-					while rightDistance > 65
-						rightDistance = brick.UltrasonicDist(ultrasonicSensorPort);
-					end
-					% Turn Completed: Ready For Next Maze Logic
-					brick.StopAllMotors('Brake');
-					% Reset Red Light Adjustment
-					recentRed = 0;
+				% Now Past Wall, Turn Right
+				brick.MoveMotor('A', -50);
+				brick.MoveMotor('B', 50); 
+				pause(4);
+				brick.StopAllMotors('Brake');				
+				% Move Forward (Until New Wall Found) To Complete Turn
+				brick.MoveMotor('AB', 25);
+				while rightDistance > 65
+					rightDistance = brick.UltrasonicDist(ultrasonicSensorPort);
 				end
+				% Turn Completed: Ready For Next Maze Logic
+				brick.StopAllMotors('Brake');
+				% Reset Red Light Adjustment
+				recentRed = 0;
 			end	
 		%
 		% [4b] Right Wall And Front Clear: Continue Forward
@@ -289,9 +358,9 @@ while i == 1
 			pause(0.75);
 			brick.StopAllMotors('Brake');
 			% Turn Left
-			brick.MoveMotor('A', -50);
-			brick.MoveMotor('B', 50);
-			pause(3.5);
+			brick.MoveMotor('A', 50);
+			brick.MoveMotor('B', -50);
+			pause(4);
 			% Turn Completed: Ready For Next Maze Logic
 			brick.StopAllMotors('Brake');
 			% Reset Red Light Adjustment
